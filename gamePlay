@@ -1,0 +1,224 @@
+#I hereby certify that this program is solely the result of my own work and is in compliance with the Academic Integrity policy of the course syllabus and the academic integrity policy of the CS department - JENNIFER PELED
+
+import Draw
+import random
+recipes = [ [(1.5,"cup flour"),(2,"cup sugar"),(3,"eggs"),(1,"tsp baking powder"),(1,"cup cocoa powder"),(1,"cup butter")], \
+            [(3,"cup flour"),(1,"cup sugar"),(2,"eggs"),(1,"tsp baking powder"),(1,"cup buttermilk"),(0.5,"tsp vanilla"), (5,"cups strawberries")],
+            [(1,"premade pie crust"),(4,"lb apples"),(1,"cup brown sugar"),(1,"cup sugar"),(1,"tsp sea salt"),(0.5,"tsp cardamon"),(1,"tsp cinammon"),(0.5,"tsp nutmeg"), (2, "cup oil")] ]
+recipePics = [ "brownie.gif", "cake.gif", "pie.gif" ]
+titles = [ "BROWNIES", "STRAWBERRY CAKE", "APPLE PIE" ]
+
+boxSize = 50 
+startingPointX = 15
+startingPointY = 60
+canvasX = 700
+canvasY = 600
+ 
+#This function runs the actual gameplay of each round.
+#It will take in recipes[i],recipePics[i],and titles[i] when invoked.
+def playRound(thisRecipe, thisRecipePic, thisRecipeTitle):
+	ans = [0 for q in range(len(thisRecipe)) ] #This list will be used to store the user inputs.
+	#This prints out the full recipe for the user to memorize, then shuffles the order of the tuples.
+	drawRecipe(thisRecipe,thisRecipeTitle,True) 
+	random.shuffle(thisRecipe) 
+	#This reprints the recipe in the shuffled order, without the quantities.
+	drawRecipe(thisRecipe,thisRecipeTitle,False) 
+	Draw.picture(thisRecipePic,canvasX//3+160, canvasY-240) 
+	
+	userDone = False 
+	while userDone == False: #While the user has not clicked within the done box.
+		boxNum = None 
+		
+		#Gets XY coordinates of the user click and finds which box it was in. 
+		if Draw.mousePressed():
+			dX = Draw.mouseX()
+			dY = Draw.mouseY()
+			boxNum = getBox(dX,dY, thisRecipe) 
+		
+		if boxNum == None: 
+			pass
+		
+		elif boxNum == "Done": #The user is ready for checking - will fall out of while loop now.
+			userDone = True
+			Draw.clear()
+			
+		else:	#The user has clicked within a quantity box. 
+			num = -1
+			while num < 0:
+				#Wait for the user to type in a number and press enter. 
+				s = getNumberString(startingPointX, startingPointY+(boxNum*boxSize), boxSize, boxSize, 14) 
+				
+				#Make sure the string is a legitimate number and convert it to a float.
+				if len(s) > 0 and s != ".": 
+				    num = float(s) 
+				    ans[boxNum] = num #Add answer into that position of quantites answer list. 
+				
+				
+	for k in range(len(ans)): #Loop through the updated list of user inputs. 
+		thisTuple = thisRecipe[k]
+		if ans[k] != thisTuple[0] : #If at any point the 0th index of the tuple at hand doesn't match the user answers.
+			Draw.picture("newpic.gif",0,0)
+			Draw.setColor(Draw.color(255, 210, 184))
+			Draw.filledRect(startingPointX,canvasY//2,canvasX-20,80)
+			Draw.setColor(Draw.BLACK)
+			Draw.setFontSize(60)
+			Draw.string("YOU LOST. TRY AGAIN.",startingPointX,canvasY//2)
+			Draw.show(6000)
+			Draw.clear()
+			return False #Returns False for playround so this same round will be played again. 
+		
+	#If every user input in ans was correct, execute the following.
+	Draw.picture("newpic.gif",0,0)
+	Draw.setColor(Draw.color(255, 210, 184))
+	Draw.filledRect(startingPointX,canvasY//3,canvasX-50,canvasY-400)
+	Draw.setColor(Draw.BLACK)
+	Draw.setFontSize(55)	
+	Draw.string("CONGRATULATIONS!",startingPointX,canvasY//3)
+	Draw.string("YOU WON THIS ROUND!",startingPointX,canvasY//2)
+	Draw.show(6000)
+	Draw.clear()
+	
+	return True #In the main function, the loop can now move to the next round (next element i). 
+
+#This function is responsible for drawing the recipe both with and without quantiites. 
+#When the qtyFlag is True, the entire recipe is printed. When it is false, only the ingredients are shown.
+def drawRecipe(thisRecipe, thisRecipeTitle, qtyFlag): 
+	Draw.picture("newpic.gif",0,0)
+	Draw.setColor(Draw.BLACK)
+	if qtyFlag == True : #Draw the full recipe, quantity and ingredients.
+		Draw.setFontSize(30)
+		Draw.setColor(Draw.color(9, 219, 198))
+		Draw.filledRect(canvasX//2-80,10,len(thisRecipeTitle)*21,40)
+		Draw.setColor(Draw.BLACK)
+		Draw.string(thisRecipeTitle, canvasX//2-80, 10)
+		Draw.setFontSize(14)
+		Draw.setColor(Draw.color(9, 219, 198))
+		Draw.filledRect(startingPointX,startingPointY,canvasX//3,startingPointY+(boxSize*(len(thisRecipe))-boxSize))
+		Draw.setColor(Draw.BLACK)		
+		for i in range(len(thisRecipe)): #Print out each tuple one by one.
+			thisTuple = thisRecipe[i]
+			Draw.string((str(thisTuple[0]) + " " + thisTuple[1]), startingPointX, startingPointY+(i*boxSize))
+
+		timer(5) #Run a timer for 5 seconds so the user sees how much time they have remaining.
+		Draw.setFontSize(14) #Reset font because size was increased in timer. 
+		Draw.clear()
+		
+	else: #Draw only the ingredients as well as boxes filled with 0s.
+		Draw.setFontSize(30)
+		Draw.setColor(Draw.color(9, 219, 198))
+		Draw.filledRect(canvasX//2-80,10,len(thisRecipeTitle)*21,40)
+		Draw.setColor(Draw.BLACK)		
+		Draw.string(thisRecipeTitle, canvasX//2-80, 10)
+		Draw.setFontSize(14)
+		Draw.setColor(Draw.color(9, 219, 198))
+		Draw.filledRect(startingPointX,startingPointY,canvasX//3,startingPointY+(boxSize*(len(thisRecipe))-boxSize))
+		Draw.setColor(Draw.BLACK)
+		for i in range(len(thisRecipe)):
+			#Draws the ingredients.
+			thisTuple = thisRecipe[i]
+			Draw.string(thisTuple[1], startingPointX + boxSize + 25, startingPointY+(boxSize//2)+(boxSize*i)) 
+			#Draws a row of boxes filled with 0s that will be replaced with user inputs.
+			Draw.rect(startingPointX,startingPointY+(boxSize*i),boxSize,boxSize)
+			Draw.string("0", startingPointX + (boxSize//2), startingPointY + (boxSize//2) +(boxSize*i)) 
+			
+		#Draws a done box for the user to click when they are ready for checking
+		Draw.setColor(Draw.color(9, 219, 198))
+		Draw.filledRect(canvasX//2-50, canvasY-100,100,100) 
+		Draw.setColor(Draw.BLACK)
+		Draw.string("DONE",canvasX//2-20,canvasY-50) #done in center of done box
+
+	Draw.show()
+
+#This function takes in the xy coordinates of the user's click as well as which recipe they were on.
+#It will then find which box the user clicked in.
+def getBox(x,y,thisRecipe): 
+	if x>=startingPointX and x<=(startingPointX+boxSize) and y > startingPointY and y <= startingPointY+(boxSize*len(thisRecipe)) :
+		numBox = (y-startingPointY)//boxSize
+		return numBox
+	if x>=canvasX//2-50 and x<=canvasX//2+50 and y>=canvasY-100:
+		return "Done"
+	return None
+
+#This function is a timer, used when drawing the recipe for memorization.
+def timer(num): 
+	Draw.setFontSize(60)
+	for i in range(num+1):
+		Draw.string(str(num-i) + "...", startingPointX + (100*i), canvasY-100)
+		Draw.show(1000)	
+
+#CODE 'NUMBERPROMTDEMO.PY' TAKEN FROM PROFESSOR BRODER COMP 1300
+#I edited code to put the string in the middle of the rectangle and changed the coloring.
+#This function allows users to input quantities in each box.
+def getNumberString(x, y, wide, high, fontSize):
+    ans = ""
+    
+    # Draw the rectangle where the user will type in the number
+    Draw.setColor(Draw.color(255, 182, 25))           
+    Draw.filledRect(x, y, wide, high)
+    Draw.show()
+    
+    done = False
+    while not done:  # while the user hasn't pressed enter
+        if Draw.hasNextKeyTyped():
+            # get the next key, and process it accordingly
+            newKey = Draw.nextKeyTyped()
+            if newKey == "Return":  # return means they're done
+                done = True
+            elif newKey == "BackSpace": # backspace allows them to undo
+                if len(ans) > 0:
+                    ans = ans[0:len(ans)-1]
+            elif newKey == 'period':   # allow just one decimal point
+                if '.' not in ans:
+                    ans += '.'
+            elif newKey in "0123456789":  # allow just digits
+                ans += newKey
+                
+            Draw.setFontSize(fontSize) # redraw the rectangle with 
+            Draw.setColor(Draw.color(255, 182, 25))  # the current number.          
+            Draw.filledRect(x, y, wide, high)
+            Draw.setColor(Draw.BLACK)
+            Draw.string(ans, x+boxSize//2, y+boxSize//2)
+        Draw.show()
+        
+    return ans
+
+
+#MAIN FUNCTION
+#This function will display the game instructions. 
+#Then, it will loop through each recipe, and wait at each until the user has won the round. 
+#Once the user wins every round, the function will display a victory message. 
+def main():
+	Draw.setCanvasSize(canvasX,canvasY)
+	Draw.setFontFamily('Avenir')
+	Draw.setColor(Draw.color(255, 210, 184))
+	Draw.filledRect(startingPointX+150, 10,canvasX//2+20,50)
+	Draw.filledRect(startingPointX+50, canvasY-100,canvasX-150,50)
+	Draw.setColor(Draw.BLACK)
+	#Game instructions, which will be shown until the user types a key.
+	while not Draw.hasNextKeyTyped():
+		Draw.setFontSize(35)
+		Draw.string("GAME INSTRUCTIONS:", startingPointX+150, 10)
+		Draw.setFontSize(14)
+		Draw.string("You will be presented with a recipe for 5 seconds.", startingPointX, 80)
+		Draw.string("Try to memorize the recipe before the timer ends.", startingPointX, 140)
+		Draw.string("You will then be presented the recipe in a scrambled order.", startingPointX, 200)
+		Draw.string("Enter the quantities you remember in each box using your keyboard.", startingPointX, 260)
+		Draw.string("You must press enter before moving to a new box.", startingPointX, 320)
+		Draw.string("Once you have entered the quantities, press the 'Done' box on your screen.", startingPointX, 380)
+		Draw.string("If you were correct, you will move to the next round. If not, you will have to restart the round.", startingPointX, 440)
+		Draw.setFontSize(35)
+		Draw.string("When you are ready, press any key.", startingPointX+50, canvasY-100)
+	Draw.clear()
+	#Gameplay
+	for i in range(len(recipes)):
+		userIsFinished = False #Enter loop
+		while not userIsFinished: 
+			userIsFinished = playRound(recipes[i],recipePics[i],titles[i])	
+		userIsFinished = False
+	
+	Draw.setBackground(Draw.color(255, 210, 184))
+	Draw.string("YOU HAVE WON", startingPointX+100, 100)
+	Draw.string("THE MEMORIZATION", startingPointX+80, 200)
+	Draw.string("GAME!!!", canvasX//2-120, 300)
+	Draw.show(6000)
+main()
